@@ -1,7 +1,5 @@
 package org.example.model;
 
-import java.util.Random;
-
 /**
  * Generator for random numbers following a Pareto distribution.
  * The Pareto distribution is a heavy-tailed distribution used to model
