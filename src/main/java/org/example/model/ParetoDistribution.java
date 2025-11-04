@@ -7,8 +7,6 @@ import java.util.Random;
  * The Pareto distribution is a heavy-tailed distribution used to model
  * phenomena like file sizes, city populations, and network traffic durations.
  *
- * @author Your Name
- * @version 1.0
  */
 public class ParetoDistribution {
 }

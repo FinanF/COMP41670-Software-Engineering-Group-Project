@@ -6,8 +6,6 @@ package org.example.model;
  * simulation behavior. All fields are final (immutable) for thread safety and
  * to prevent accidental modification.
  *
- * @author Jordan Shodipo
- * @version 1.0
  */
 public class SimulationConfig {
     private final double totalSimulationTime;    // Total duration (seconds)
