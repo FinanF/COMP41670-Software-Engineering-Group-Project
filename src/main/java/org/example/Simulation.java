@@ -2,7 +2,7 @@ package org.example;
 
 import org.example.model.Event;
 import org.example.model.EventType;
-import org.example.model.ParetoDistribution;
+import org.example.distribution.ParetoDistribution;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;

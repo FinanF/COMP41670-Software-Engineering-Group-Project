@@ -6,9 +6,6 @@ package org.example.model;
  * Events are immutable and ordered by timestamp.
  * This class implements Comparable to enable automatic ordering in a PriorityQueue,
  * ensuring events are always processed in chronological order.
- *
- * @author Jordan Shodipo
- * @version 1.0
  */
 public class Event implements Comparable<Event>{
     private final double timestamp;      // When this event occurs (simulation time)
