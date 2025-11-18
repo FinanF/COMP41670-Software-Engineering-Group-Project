@@ -188,7 +188,7 @@ public class NetworkSimulator {
      */
     private void logEvent(Event event, int sourceId) {
         String eventTypeStr = (event.getEventType() == EventType.SOURCE_TURNS_ON) ? "ON" : "OFF";
-        System.out.printf("  [%.4f] Source %d turned %s%n", currentTime, sourceId, eventTypeStr);
+        System.out.printf("Time [%.4f] Source %d turned %s%n", currentTime, sourceId, eventTypeStr);
     }
 
     // ===== GETTER METHODS =====

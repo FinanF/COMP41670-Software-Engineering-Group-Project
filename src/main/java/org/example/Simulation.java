@@ -1,52 +1,129 @@
 package org.example;
 
-import org.example.model.Event;
-import org.example.distribution.ParetoDistribution;
 import org.example.model.SimulationConfig;
-import org.example.model.TrafficSource;
-import org.example.simulation.EventQueue;
+import org.example.simulation.NetworkSimulator;
+import org.example.util.InputValidator;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.logging.Logger;
 
 /**
  * Event-driven ON/OFF self-similar traffic simulation using SimulationConfig + EventQueue.
  */
 public class Simulation {
+
+    private final InputValidator inputValidator;
+    private boolean continueRunning;
+    private static final Logger logger = Logger.getLogger(Simulation.class.getName());
+
+    public Simulation() {
+        this.inputValidator = new InputValidator();
+        this.continueRunning = true;
+    }
+
+    /**
+     * Main entry point for the application.
+     */
     public static void main(String[] args) {
-        Scanner in = new Scanner(System.in);
+        Simulation app = new Simulation();
+        app.run();
+    }
 
-        // === Read inputs for SimulationConfig ===
-        System.out.print("Enter total simulation time (seconds): ");
-        double totalSimTime = in.nextDouble();
+    /**
+     * Main application loop.
+     * Displays welcome, runs simulations in loop until user quits.
+     */
+    public void run() {
+        displayWelcome();
 
-        System.out.print("Enter number of traffic sources: ");
-        int numSources = in.nextInt();
+        while(continueRunning) {
+            try {
+                // Get parameters from user
+                SimulationConfig config = collectSimulationParameters();
 
-        System.out.print("Enter Pareto shape (>0): ");
-        double paretoShape = in.nextDouble();
+                // Run simulation
+                System.out.println("Running simulation...");
 
-        System.out.print("Enter Pareto scale (>0): ");
-        double paretoScale = in.nextDouble();
+                NetworkSimulator simulator = new NetworkSimulator(config);
+                simulator.run();
+                System.out.println("Simulation complete.");
 
-        System.out.print("Enter output interval (seconds): ");
-        double outputInterval = in.nextDouble();
+                // Display results
+                simulator.printSummary();
 
-        System.out.print("Enable event logging? (true/false): ");
-        boolean enableEventLogging = in.nextBoolean();
+                // Ask if user wants to continue
+                continueRunning = inputValidator.readYesNo("\nRun another simulation? (y/n): ");
 
-        in.nextLine(); // consume newline
-        System.out.print("Enter CSV output file path (blank for none): ");
-        String outputPath = in.nextLine().trim();
-        if (outputPath.isEmpty()) outputPath = null;
+            } catch (Exception e) {
+                System.err.println("Error during simulation: " + e.getMessage());
+                logger.severe("Exception during simulation: " + e);
+                continueRunning = inputValidator.readYesNo("\nTry again? (y/n): ");
+            }
+        }
+        displayGoodbye();
+        inputValidator.close();
+    }
+    /**
+     * Collect simulation parameters from user via console prompts.
+     *
+     * @return SimulationConfig with user-provided parameters
+     */
+    private SimulationConfig collectSimulationParameters() {
+        System.out.println("SIMULATION PARAMETERS");
 
-        // === Build config ===
-        SimulationConfig config = new SimulationConfig(
-                totalSimTime,
+        // Total simulation time
+        double totalTime = inputValidator.readDouble(
+                "Enter total simulation time (seconds): ",
+                0.1,
+                1000.0
+        );
+
+        // Number of sources
+        int numSources = inputValidator.readInt(
+                "Enter number of traffic sources: ",
+                1,
+                100
+        );
+
+        // Pareto shape parameter
+        double paretoShape = inputValidator.readDouble(
+                "Enter Pareto shape parameter (>0): ",
+                0.5,
+                3.0
+        );
+
+        // Pareto scale parameter
+        double paretoScale = inputValidator.readDouble(
+                "Enter Pareto scale parameter (>0): ",
+                0.1,
+                10.0
+        );
+
+        // Output interval (snapshot frequency)
+        double outputInterval = inputValidator.readDouble(
+                "Enter snapshot interval (seconds, 0.01-" + totalTime + "): ",
+                0.01,
+                totalTime
+        );
+
+        // Event logging
+        boolean enableEventLogging = inputValidator.readYesNo(
+                "Enable event logging to console? (y/n): "
+        );
+
+        // CSV output
+        String outputPath = null;
+        boolean wantCSV = inputValidator.readYesNo(
+                "Export results to CSV file? (y/n): "
+        );
+        if (wantCSV) {
+            outputPath = inputValidator.readString(
+                    "Enter output filename (e.g., 'simulation_output.csv'): "
+            );
+        }
+
+        // Create and return config
+        return new SimulationConfig(
+                totalTime,
                 numSources,
                 paretoShape,
                 paretoScale,
@@ -54,82 +131,32 @@ public class Simulation {
                 enableEventLogging,
                 outputPath
         );
+    }
+    /**
+     * Display welcome message and usage instructions.
+     */
+    private void displayWelcome() {
+        System.out.println("TELECOM NETWORK TRAFFIC SIMULATOR WITH SELF-SIMILAR STATISTICS");
+        System.out.println();
+        System.out.println("This simulator models network traffic using an aggregated ON/OFF");
+        System.out.println("source model with Pareto-distributed ON and OFF durations.");
+        System.out.println();
+        System.out.println("Features:");
+        System.out.println("  • Event-driven simulation");
+        System.out.println("  • Self-similar traffic generation");
+        System.out.println("  • Real-time snapshots and statistics");
+        System.out.println("  • CSV export for analysis");
+        System.out.println("  • Event logging for debugging");
+        System.out.println();
+        System.out.println("Type 'quit' or 'q' at any prompt to exit.");
+        System.out.println();
+    }
 
-        if (!config.validateParameters()) {
-            System.err.println("Invalid simulation parameters. Exiting.");
-            return;
-        }
-
-        // === Init sources and queue (all start OFF; schedule first ON) ===
-        List<TrafficSource> sources = new ArrayList<>();
-        EventQueue queue = new EventQueue();
-
-        for (int i = 0; i < config.getNumSources(); i++) {
-            ParetoDistribution onDist  = new ParetoDistribution(config.getParetoShape(), config.getParetoScale());
-            ParetoDistribution offDist = new ParetoDistribution(config.getParetoShape(), config.getParetoScale());
-            TrafficSource src = new TrafficSource(i, onDist, offDist, /*startOn=*/false);
-            sources.add(src);
-            src.scheduleInitialEvent(queue, /*startTime=*/0.0);
-        }
-
-        // === Run event-driven loop ===
-        double now = 0.0;
-        int activeSources = 0;
-
-        // time-series sampling
-        double nextSampleT = 0.0;
-        StringBuilder csv = new StringBuilder();
-        csv.append("time,active_sources\n");
-
-        System.out.printf(Locale.US,
-                "Config: T=%.3f s, N=%d, shape=%.3f, scale=%.3f, t=%.3f s, logging=%s%s%n",
-                config.getTotalSimulationTime(), config.getNumSources(),
-                config.getParetoShape(), config.getParetoScale(),
-                config.getOutputInterval(), config.isEventLoggingEnabled(),
-                config.getOutputFilePath() != null ? (", csv=" + config.getOutputFilePath()) : "");
-
-        while (!queue.isEmpty()) {
-            Event e = queue.peek();
-            if (e == null) break;
-
-            // stop if next event exceeds sim horizon
-            if (e.getTimestamp() > config.getTotalSimulationTime()) {
-                break;
-            }
-
-            // advance time
-            e = queue.dequeue();
-            now = e.getTimestamp();
-
-            // process event with its source
-            TrafficSource ts = sources.get(e.getSourceId());
-            boolean wasOn = ts.isOn();
-
-            if (config.isEventLoggingEnabled()) {
-                System.out.printf(Locale.US,
-                        "t=%.6f | ts=%d | %s%n",
-                        now, e.getSourceId(), e.getEventType());
-            }
-
-            // state update + schedule opposite event
-            ts.processEvent(e, now, queue);
-
-            boolean isOn = ts.isOn();
-            if (wasOn != isOn) {
-                activeSources += isOn ? 1 : -1;
-            }
-        }
-
-//        // write CSV if requested
-//        if (config.getOutputFilePath() != null) {
-//            try {
-//                Files.writeString(Path.of(config.getOutputFilePath()), csv.toString());
-//                System.out.println("Wrote CSV to: " + config.getOutputFilePath());
-//            } catch (Exception ex) {
-//                System.err.println("Failed to write CSV: " + ex.getMessage());
-//            }
-//        }
-
-        System.out.println("Simulation complete.");
+    /**
+     * Display goodbye message.
+     */
+    private void displayGoodbye() {
+        System.out.println("Thank you for using the Telecom Network Traffic Simulator!");
+        System.out.println("Goodbye!");
     }
 }
