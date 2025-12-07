@@ -67,7 +67,7 @@ public class Simulation {
      *
      * @return SimulationConfig with user-provided parameters
      */
-    private SimulationConfig collectSimulationParameters() {
+    SimulationConfig collectSimulationParameters() {
         System.out.println("SIMULATION PARAMETERS");
 
         // Total simulation time

@@ -11,7 +11,7 @@ public class ParetoDistributionTest {
         double scale = 1.0;
         ParetoDistribution p = new ParetoDistribution(alpha, scale);
 
-        int N = 100_000;
+        int N = 100000;
         double minObserved = Double.POSITIVE_INFINITY;
         int tailCount = 0;
         double tailThreshold = 10.0;
