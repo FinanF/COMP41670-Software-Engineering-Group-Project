@@ -15,7 +15,7 @@ public class SimulationTest {
     @Test
     public void testCollectSimulationParameters() {
         // Simulate all inputs in correct order:
-        // totalTime, numSources, paretoShape, paretoScale, interval, logging, csv?, filename
+        // totalTime, numSources, paretoShape, paretoScale, interval, logging, filename
         String input =
                 """
                         100.0
