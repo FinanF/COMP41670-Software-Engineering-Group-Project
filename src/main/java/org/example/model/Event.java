@@ -91,9 +91,8 @@ public class Event implements Comparable<Event>{
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Event)) return false;
+        if (!(o instanceof Event event)) return false;
 
-        Event event = (Event) o;
         return Double.compare(event.timestamp, timestamp) == 0 &&
                 eventType == event.eventType &&
                 sourceId == event.sourceId;

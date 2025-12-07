@@ -42,7 +42,7 @@ public class SimulationStatistics {
      * @return Unmodifiable list of all snapshots
      */
     public List<TrafficSnapshot> getSnapshots() {
-        return Collections.unmodifiableList(new ArrayList<>(snapshots));
+        return List.copyOf(snapshots);
     }
 
     /**
@@ -133,12 +133,14 @@ public class SimulationStatistics {
         Map<String, Double> timeRange = getTimeRange();
 
         return String.format(
-                "=== Simulation Statistics ===\n" +
-                        "Total Snapshots: %d\n" +
-                        "Time Range: %.2f - %.2f seconds\n" +
-                        "Min Rate: %d packets/sec\n" +
-                        "Max Rate: %d packets/sec\n" +
-                        "Avg Rate: %.2f packets/sec\n",
+                """
+                        === Simulation Statistics ===
+                        Total Snapshots: %d
+                        Time Range: %.2f - %.2f seconds
+                        Min Rate: %d packets/sec
+                        Max Rate: %d packets/sec
+                        Avg Rate: %.2f packets/sec
+                        """,
                 snapshots.size(),
                 timeRange.get("startTime"),
                 timeRange.get("endTime"),

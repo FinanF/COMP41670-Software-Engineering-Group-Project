@@ -1,7 +1,6 @@
 package org.example.simulation;
 import org.example.model.Event;
 
-import java.util.ArrayList;
 import java.util.PriorityQueue;
 /**
  * Manages a queue of events, ensuring they are processed in chronological order.
